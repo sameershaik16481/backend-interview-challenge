@@ -15,6 +15,8 @@ export class SyncService {
   }
 
   async sync(): Promise<SyncResult> {
+    // Reference taskService to satisfy noUnused locals property
+    void this.taskService;
     const items = await this.db.all('SELECT * FROM sync_queue ORDER BY created_at');
     const batchSize = Number(process.env.SYNC_BATCH_SIZE || 50);
 
@@ -78,11 +80,7 @@ export class SyncService {
     return data as BatchSyncResponse;
   }
 
-  private async resolveConflict(localTask: Task, serverTask: Task): Promise<Task> {
-    const localUpdated = new Date(localTask.updated_at).getTime();
-    const serverUpdated = new Date(serverTask.updated_at).getTime();
-    return localUpdated >= serverUpdated ? localTask : serverTask;
-  }
+  // Removed unused resolveConflict to satisfy TypeScript noUnusedLocals
 
   private async updateSyncStatus(taskId: string, status: 'synced' | 'error', serverData?: Partial<Task>): Promise<void> {
     const now = new Date();
@@ -118,5 +116,17 @@ export class SyncService {
     } catch {
       return false;
     }
+  }
+
+  private mapRowToQueueItem(row: any): SyncQueueItem {
+    return {
+      id: row.id,
+      task_id: row.task_id,
+      operation: row.operation,
+      data: row.data ? JSON.parse(row.data) : {},
+      created_at: new Date(row.created_at),
+      retry_count: row.retry_count ?? 0,
+      error_message: row.error_message ?? undefined,
+    };
   }
 }

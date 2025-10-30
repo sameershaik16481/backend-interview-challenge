@@ -10,6 +10,8 @@ export function errorHandler(
   res: Response,
   next: NextFunction
 ): void {
+  // Mark next as referenced to satisfy TypeScript's noUnusedParameters
+  void next;
   console.error('Error:', err);
 
   const statusCode = err.statusCode || 500;
